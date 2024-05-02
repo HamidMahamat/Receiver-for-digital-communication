@@ -73,11 +73,9 @@ def seqSymbEch(d,F) :
 
 def filterootcos(beta, F, omega) :
     he = []
-    p=0
     for n in range(int(np.floor(2 * omega * F))) :
         if np.abs(n + omega*F) == F/(4 * beta) :
-            s = (2*beta/(np.pi*np.sqrt(F)))*np.sin(np.pi*(1-beta)/(4*beta)) + (beta/np.sqrt(F))*np.cos(
-np.pi*(1+beta)/(4*beta)) 
+            s = (2*beta/(np.pi*np.sqrt(F)))*np.sin(np.pi*(1-beta)/(4*beta)) + (beta/np.sqrt(F))*np.cos(np.pi*(1+beta)/(4*beta)) 
             he.append(s)
             
         else:
