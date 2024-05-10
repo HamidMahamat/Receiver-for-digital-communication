@@ -73,7 +73,7 @@ def seqSymbEch(d,F) :
 
 def filterootcos(beta, F, omega) :
     he = []
-    for n in range(int(np.floor(2 * omega * F))) :
+    for n in range(int(np.floor(2 * omega * F))+1) :
         if np.abs(n + omega*F) == F/(4 * beta) :
             s = (2*beta/(np.pi*np.sqrt(F)))*np.sin(np.pi*(1-beta)/(4*beta)) + (beta/np.sqrt(F))*np.cos(np.pi*(1+beta)/(4*beta)) 
             he.append(s)
@@ -86,14 +86,18 @@ def filterootcos(beta, F, omega) :
     
 
     
+def  MLSymbolDetectorQPSKlowCPLX(A, Delta, z) :
+    d_j = A * np.exp(1j * (np.pi/4) * np.array([5, 7, 1, 3]))
+    
+    # Maximum Likelihood metric
+    metric = np.abs( z - ((Delta**2/2)*np.ones((len(z),len(d_j)))*d_j).T )
+    return d_j[np.argmin(metric, axis=0)]
     
     
     
-    
-    
-    
-    
-    
+def AWGN(Delta, var, d) :
+    noise = np.sqrt(var/2) * (np.random.randn(len(d)) + 1j * np.random.randn(len(d)))
+    return (Delta**2)/2 * d + noise
     
     
     
