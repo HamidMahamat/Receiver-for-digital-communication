@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.signal as sg
+
+from scipy.special import erfc
 
 
 def bit2Symbol_Mapping_QPSK_Gray(A, m) :
@@ -100,17 +103,18 @@ def AWGN(Delta, var, d) :
     return (Delta**2)/2 * d + noise
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+def xcorr(x,y):
+    """
+    Perform Cross-Correlation on x and y
+    x    : 1st signal
+    y    : 2nd signal
+
+    returns
+    lags : lags of correlation
+    corr : coefficients of correlation
+    """
+    corr = sg.correlate(x, y, mode="full")
+    lags = sg.correlation_lags(len(x), len(y), mode="full")
+    return lags, corr
+
     
