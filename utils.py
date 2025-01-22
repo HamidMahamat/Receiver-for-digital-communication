@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as sg
+import sounddevice as sd
 
 from scipy.special import erfc
 
@@ -56,7 +57,7 @@ def seqSymbEch(d,F) :
         array of symbols.
     F : integer
         oversampling factor e.g if
-        Te is the payload data sampling periode 
+        Ts is the payload data sampling periode 
         then Ts = F * Te is the digital processing 
         sampling period.
 
@@ -67,26 +68,90 @@ def seqSymbEch(d,F) :
         zeros have been inserted between each value
         of the sequence symbols.
     """
-    zero = np.zeros(F)  
-    res = np.zeros(F * (len(d)-1) + len(d)).astype(complex)
-    for k in range(len(d)):
-        res[k*F] = d[k]
+    N = len(d) * F
+    res = np.zeros(N, dtype=complex)
+    res[::F] = d
     return res
+
+    
       
 
-def filterootcos(beta, F, omega) :
+def filterootcos(β, F, Ω) :
     he = []
-    for n in range(int(np.floor(2 * omega * F))+1) :
-        if np.abs(n + omega*F) == F/(4 * beta) :
-            s = (2*beta/(np.pi*np.sqrt(F)))*np.sin(np.pi*(1-beta)/(4*beta)) + (beta/np.sqrt(F))*np.cos(np.pi*(1+beta)/(4*beta)) 
+    for n in range(int(np.floor(2 * Ω * F))+1) :
+        if np.abs(n + Ω*F) == F/(4 * β) :
+            s = (2*β/(np.pi*np.sqrt(F)))*np.sin(np.pi*(1-β)/(4*β)) + (β/np.sqrt(F))*np.cos(np.pi*(1+β)/(4*β)) 
             he.append(s)
             
         else:
-            s = 4*beta/(np.pi*np.sqrt(F))*(np.cos((1+beta)*np.pi*(n-omega*F)/F) + ((1-beta)*np.pi/(4*beta))*np.sinc((n-omega*F)*(1-beta)/F))/(1-(4*beta*(n-omega*F)/F)**2)
+            s = 4*β/(np.pi*np.sqrt(F))*(np.cos((1+β)*np.pi*(n-Ω*F)/F) + ((1-β)*np.pi/(4*β))*np.sinc((n-Ω*F)*(1-β)/F))/(1-(4*β*(n-Ω*F)/F)**2)
             he.append(s)
     return np.array(he)
+
                 
+
+def eye_diagram(signal, oversampling_factor, filter_sample_number, window_limit) :
+    """
+    Parameters
+    ----------
+    signal : np.ndarray (N,1)
+        array of symbols.
+    oversampling_factor : integer
+        oversampling factor e.g if
+        Te is the payload data sampling periode 
+        then Ts = F * Te is the digital processing 
+        sampling period.
+    filter_sample_number : integer
+    window_limit : integer
+        number of symbols * F to consider in the eye diagram.
+
+    Returns
+    -------
+    None.
+    """
+
+    N_filter = filter_sample_number
+    signal = signal[N_filter-1 : -N_filter-4]
+    limit_xx = int(np.floor(window_limit * oversampling_factor))
     
+    
+    y_max = np.max(np.real(signal)) * 1.05
+    plt.xlim(0, limit_xx-1)
+    plt.ylim(-y_max, y_max)
+    plt.grid()
+    for i in range(int(np.floor(len(signal)/limit_xx))) :
+        plt.plot(np.arange(limit_xx), np.real(signal[i*limit_xx:(i+1)*limit_xx]), 'b')
+    
+    # the last part
+    len_last_part = len(np.real(signal[(i+1)*limit_xx:])) 
+    plt.plot(np.arange(len_last_part), np.real(signal[(i+1)*limit_xx:]), 'b') 
+    plt.xlabel(r'$t/T_e$')
+    plt.ylabel("Amplitude")
+
+
+def sychronization(s_hr, idx_start, oversampling_factor, filter_sample_number, d) :
+    """
+    Parameters
+    ----------
+    s_hr : np.ndarray complex (N,1)
+        output of reception filter.
+    idx_start : int
+        index to start the clock.
+    oversampling_factor : int
+        oversampling factor.
+    filter_sample_number : int
+        number of samples of the filter.
+    d : np.ndarray complex (L,1)
+        sequence of mapped symbols.
+    Returns
+    -------
+    return synchronized sampled symbols.
+    """    
+    F = oversampling_factor
+    N_filter = filter_sample_number
+    s_hr = s_hr[N_filter-1 : -N_filter-4]
+    s_hr_ech = s_hr[idx_start::F]
+    return s_hr_ech[:len(d)]
 
     
 def  MLSymbolDetectorQPSKlowCPLX(A, Delta, z) :
